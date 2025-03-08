@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WebAssembly Image Processing</title>
+    <style>
+        .container {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 20px;
+        }
+        video, canvas {
+            border: 1px solid #ccc;
+            width: 640px;
+            height: 480px;
+        }
+        .controls {
+            text-align: center;
+            margin: 20px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 0 5px;
+        }
+        .filter-controls {
+            margin: 20px;
+            padding: 20px;
+            background: #f5f5f5;
+            border-radius: 8px;
+        }
+        .filter-controls select {
+            padding: 8px;
+            margin: 0 10px;
+            font-size: 16px;
+        }
+        .brightness-control {
+            margin: 10px 0;
+        }
+        .brightness-control input {
+            width: 200px;
+            margin: 0 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <video id="video" autoplay playsinline></video>
+        <canvas id="canvas"></canvas>
+    </div>
+    <div class="controls">
+        <button id="startBtn">Start Camera</button>
+        <button id="processBtn" disabled>Process Frame</button>
+    </div>
+    <div class="filter-controls">
+        <label>Filter Type:</label>
+        <select id="filterSelect">
+            <option value="NONE">None</option>
+            <option value="INVERT">Invert Colors</option>
+            <option value="GRAYSCALE">Grayscale</option>
+            <option value="SEPIA">Sepia</option>
+            <option value="BRIGHTNESS">Brightness</option>
+            <option value="BLUR">Blur</option>
+        </select>
+        <div class="brightness-control">
+            <label>Brightness:</label>
+            <input type="range" id="brightnessSlider" min="0" max="200" value="120" step="10">
+            <span id="brightnessValue">1.2</span>
+        </div>
+    </div>
+    <script src="image_processor.js" type="module"></script>
+    <script src="main.js" type="module"></script>
+</body>
+</html> 

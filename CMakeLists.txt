@@ -1,0 +1,30 @@
+cmake_minimum_required(VERSION 3.10)
+
+project(image_processor)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# Ensure we're using Emscripten compiler
+if (NOT CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
+    message(FATAL_ERROR "This project must be compiled with Emscripten")
+endif()
+
+add_executable(image_processor src/cpp/image_processor.cpp)
+
+# Configure Emscripten-specific options
+set_target_properties(image_processor PROPERTIES
+    LINK_FLAGS "-s WASM=1 \
+                -s EXPORTED_RUNTIME_METHODS=['ccall','cwrap'] \
+                -s EXPORTED_FUNCTIONS=['_malloc','_free'] \
+                -s ALLOW_MEMORY_GROWTH=1 \
+                -s NO_EXIT_RUNTIME=1 \
+                -s ENVIRONMENT=web \
+                -s MODULARIZE=1 \
+                -s EXPORT_ES6=1 \
+                -s EXPORT_NAME=createModule \
+                -O3 \
+                -ffast-math \
+                -flto \
+                -lembind"
+    OUTPUT_NAME "image_processor") 
