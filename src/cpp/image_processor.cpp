@@ -40,10 +40,32 @@ public:
         val outputArray = val::global("Uint8Array").new_(val::array(output));
         return outputArray;
     }
+
 };
 
 EMSCRIPTEN_BINDINGS(image_processor) {
     class_<ImageProcessor>("ImageProcessor")
         .constructor<>()
         .function("processGrayscale", &ImageProcessor::processGrayscale);
+        // .function("applyGrayscale", &ImageProcessor::applyGrayscale);
 } 
+
+extern "C" {
+    EMSCRIPTEN_KEEPALIVE
+    void applyGrayscale(unsigned char* imageData, int width, int height) {
+        int length = width * height * 4;
+
+        for (int i = 0; i < length; i += 4) {
+            uint8_t gray = static_cast<uint8_t>(
+                0.299f * imageData[i] +
+                0.587f * imageData[i + 1] +
+                0.114f * imageData[i + 2]
+            );
+
+            imageData[i] = gray;
+            imageData[i + 1] = gray;
+            imageData[i + 2] = gray;
+            imageData[i + 3] = imageData[i + 3];
+        }
+    }
+}

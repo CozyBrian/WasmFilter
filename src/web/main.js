@@ -1,11 +1,12 @@
 let imageProcessor = null;
+let wasmModule = null;
 
 // Initialize the WebAssembly module
 async function initModule() {
     try {
         const { default: createModule } = await import('./image_processor.js');
-        const module = await createModule();
-        imageProcessor = new module.ImageProcessor();
+        wasmModule = await createModule();
+        imageProcessor = new wasmModule.ImageProcessor();
         document.getElementById('startBtn').disabled = false;
     } catch (err) {
         console.error('Error initializing module:', err);
@@ -13,12 +14,25 @@ async function initModule() {
 }
 initModule();
 
+function applyGrayscale(imageData, width, height) {
+    if (!wasmModule) return imageData;
+    const size = imageData.length;
+    const ptr = wasmModule._malloc(size);
+    wasmModule.HEAPU8.set(imageData, ptr);
+    wasmModule._applyGrayscale(ptr, width, height);
+    const result = new Uint8ClampedArray(wasmModule.HEAPU8.buffer, ptr, size);
+    const output = new Uint8ClampedArray(result);
+
+    wasmModule._free(ptr);
+    return output;
+}
+
 // Wait for DOM to be fully loaded
 document.addEventListener('DOMContentLoaded', () => {
     // Get DOM elements
     const video = document.getElementById('video');
     const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
     const startBtn = document.getElementById('startBtn');
     const processBtn = document.getElementById('processBtn');
 
@@ -52,7 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
       
           // Send imageData to WASM for processing
-          const processedData = imageProcessor.processGrayscale(imageData.data, canvas.width, canvas.height);
+          const processedData = applyGrayscale(imageData.data, canvas.width, canvas.height);
       
           // Draw the processed image back onto the canvas
           const outputImageData = new ImageData(new Uint8ClampedArray(processedData), canvas.width, canvas.height);
