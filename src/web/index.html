@@ -1,75 +1,43 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>WebAssembly Image Processing</title>
+    <title>Simple Grayscale Filter</title>
     <style>
-        .container {
-            display: flex;
-            justify-content: center;
-            gap: 20px;
+        body {
+            font-family: Arial, sans-serif;
             margin: 20px;
-        }
-        video, canvas {
-            border: 1px solid #ccc;
-            width: 640px;
-            height: 480px;
-        }
-        .controls {
             text-align: center;
-            margin: 20px;
+        }
+        #video {
+            border: 1px solid #ccc;
+            margin: 10px;
+            width: 500px;
+            height: calc(500px * 0.75);
+        }
+        #canvas {
+            border: 1px solid #ccc;
+            margin: 10px;
+            width: 500px;
+            height: calc(500px * 0.75);
         }
         button {
-            padding: 10px 20px;
-            font-size: 16px;
-            cursor: pointer;
-            margin: 0 5px;
-        }
-        .filter-controls {
-            margin: 20px;
-            padding: 20px;
-            background: #f5f5f5;
-            border-radius: 8px;
-        }
-        .filter-controls select {
-            padding: 8px;
-            margin: 0 10px;
-            font-size: 16px;
-        }
-        .brightness-control {
-            margin: 10px 0;
-        }
-        .brightness-control input {
-            width: 200px;
-            margin: 0 10px;
+            margin: 5px;
+            padding: 8px 16px;
+            font-size: 14px;
         }
     </style>
 </head>
 <body>
-    <div class="container">
+    <h1>Simple Grayscale Filter</h1>
+    <div style="display: flex; justify-content: center; align-items: center;">
         <video id="video" autoplay playsinline></video>
         <canvas id="canvas"></canvas>
     </div>
-    <div class="controls">
+    <div>
         <button id="startBtn">Start Camera</button>
-        <button id="processBtn" disabled>Process Frame</button>
+        <button id="processBtn" disabled>Convert to Grayscale</button>
     </div>
-    <div class="filter-controls">
-        <label>Filter Type:</label>
-        <select id="filterSelect">
-            <option value="NONE">None</option>
-            <option value="INVERT">Invert Colors</option>
-            <option value="GRAYSCALE">Grayscale</option>
-            <option value="SEPIA">Sepia</option>
-            <option value="BRIGHTNESS">Brightness</option>
-            <option value="BLUR">Blur</option>
-        </select>
-        <div class="brightness-control">
-            <label>Brightness:</label>
-            <input type="range" id="brightnessSlider" min="0" max="200" value="120" step="10">
-            <span id="brightnessValue">1.2</span>
-        </div>
-    </div>
-    <script src="image_processor.js" type="module"></script>
-    <script src="main.js" type="module"></script>
+    <script type="module" src="image_processor.js"></script>
+    <script type="module" src="main.js"></script>
 </body>
 </html> 
