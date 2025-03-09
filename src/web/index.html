@@ -7,6 +7,7 @@
             font-family: Arial, sans-serif;
             margin: 20px;
             text-align: center;
+            background-color: #f0f0f0;
         }
         #video {
             display: none;
@@ -16,17 +17,55 @@
             margin: 10px;
             width: 640px;
             height: 480px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            background-color: white;
         }
         .controls {
             margin: 10px;
+            padding: 15px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            display: inline-block;
+        }
+        .control-group {
+            margin: 10px 0;
+        }
+        .control-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #666;
+            font-size: 12px;
         }
         button, select {
             margin: 5px;
             padding: 8px 16px;
             font-size: 14px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background-color: white;
+        }
+        button:hover, select:hover {
+            background-color: #f0f0f0;
+        }
+        button:disabled, select:disabled {
+            background-color: #e0e0e0;
+            cursor: not-allowed;
         }
         select {
-            min-width: 120px;
+            min-width: 150px;
+        }
+        .metrics {
+            width: 200px;
+            margin: 10px;
+            font-family: monospace;
+            background-color: white;
+            padding: 10px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+        .metrics div {
+            margin: 5px 0;
         }
     </style>
 </head>
@@ -37,12 +76,30 @@
         <canvas id="canvas"></canvas>
     </div>
     <div class="controls">
-        <button id="startBtn">Start Camera</button>
-        <select id="filterSelect" disabled>
-            <option value="none">No Filter</option>
-            <option value="grayscale">Grayscale</option>
-            <option value="sepia">Sepia</option>
-        </select>
+        <div class="control-group">
+            <label for="cameraSelect">Select Camera</label>
+            <select id="cameraSelect">
+                <option value="">Loading cameras...</option>
+            </select>
+        </div>
+        <div class="control-group">
+            <button id="startBtn" disabled>Start Camera</button>
+        </div>
+        <div class="control-group">
+            <label for="filterSelect">Select Filter</label>
+            <select id="filterSelect" disabled>
+                <option value="none">No Filter</option>
+                <option value="grayscale">Grayscale</option>
+                <option value="sepia">Sepia</option>
+                <option value="gaussian">Gaussian Blur</option>
+                <option value="edge">Edge Detection</option>
+                <option value="oil">Oil Painting</option>
+            </select>
+        </div>
+    </div>
+    <div class="metrics">
+        <div id="fps">FPS: --</div>
+        <div id="processingTime">Processing Time: --ms</div>
     </div>
     <script type="module" src="image_processor.js"></script>
     <script type="module" src="main.js"></script>
