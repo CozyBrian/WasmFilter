@@ -66,6 +66,7 @@ private:
         }
         
         // Horizontal pass
+        #pragma omp parallel for
         for (int y = 0; y < height; ++y) {
             const uint8_t* row = input + y * stride;
             uint8_t* outRow = tempBuffer.data() + y * stride;
@@ -92,6 +93,7 @@ private:
         }
         
         // Vertical pass
+        #pragma omp parallel for
         for (int x = 0; x < width; ++x) {
             for (int y = 0; y < height; ++y) {
                 float r = 0, g = 0, b = 0;
@@ -123,6 +125,7 @@ public:
 
         switch (currentFilter) {
             case FilterType::INVERT:
+                #pragma omp parallel for
                 for (size_t i = 0; i < totalBytes; i += 4) {
                     processed[i] = 255 - imageData[i];         // R
                     processed[i + 1] = 255 - imageData[i + 1]; // G
@@ -132,6 +135,7 @@ public:
                 break;
 
             case FilterType::GRAYSCALE:
+                #pragma omp parallel for
                 for (size_t i = 0; i < totalBytes; i += 4) {
                     const uint8_t gray = clamp(0.299f * imageData[i] + 0.587f * imageData[i + 1] + 0.114f * imageData[i + 2]);
                     processed[i] = processed[i + 1] = processed[i + 2] = gray;
@@ -140,6 +144,7 @@ public:
                 break;
 
             case FilterType::SEPIA:
+                #pragma omp parallel for
                 for (size_t i = 0; i < totalBytes; i += 4) {
                     const float r = imageData[i];
                     const float g = imageData[i + 1];
@@ -153,6 +158,7 @@ public:
                 break;
 
             case FilterType::BRIGHTNESS:
+                #pragma omp parallel for
                 for (size_t i = 0; i < totalBytes; i += 4) {
                     processed[i] = clamp(imageData[i] * brightness);         // R
                     processed[i + 1] = clamp(imageData[i + 1] * brightness); // G
