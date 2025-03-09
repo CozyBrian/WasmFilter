@@ -19,11 +19,9 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3 -ffast-math")
 set_target_properties(image_processor PROPERTIES
     LINK_FLAGS "-s WASM=1 \
                 -s ENVIRONMENT=web \
-                -s EXPORTED_RUNTIME_METHODS=['ccall','cwrap'] \
-                -s EXPORTED_FUNCTIONS=['_applyGrayscale','_malloc','_free'] \
+                -s EXPORTED_FUNCTIONS=['_applyFilter','_malloc','_free'] \
                 -s ALLOW_MEMORY_GROWTH=1 \
                 -s MODULARIZE=1 \
                 -s EXPORT_ES6=1 \
-                -s EXPORT_NAME=createModule \
-                -lembind"
+                -s EXPORT_NAME=createModule"
 ) 

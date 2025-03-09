@@ -1,28 +1,31 @@
-let imageProcessor = null;
 let wasmModule = null;
+let currentFilter = 'none';
+
+const FilterType = {
+    NONE: 0,
+    GRAYSCALE: 1,
+    SEPIA: 2
+};
 
 // Initialize the WebAssembly module
 async function initModule() {
     try {
         const { default: createModule } = await import('./image_processor.js');
         wasmModule = await createModule();
-        imageProcessor = new wasmModule.ImageProcessor();
         document.getElementById('startBtn').disabled = false;
     } catch (err) {
         console.error('Error initializing module:', err);
     }
 }
-initModule();
 
-function applyGrayscale(imageData, width, height) {
+function applyFilter(imageData, width, height, filterType) {
     if (!wasmModule) return imageData;
     const size = imageData.length;
     const ptr = wasmModule._malloc(size);
     wasmModule.HEAPU8.set(imageData, ptr);
-    wasmModule._applyGrayscale(ptr, width, height);
+    wasmModule._applyFilter(ptr, width, height, filterType);
     const result = new Uint8ClampedArray(wasmModule.HEAPU8.buffer, ptr, size);
     const output = new Uint8ClampedArray(result);
-
     wasmModule._free(ptr);
     return output;
 }
@@ -34,12 +37,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
     const startBtn = document.getElementById('startBtn');
-    const processBtn = document.getElementById('processBtn');
+    const filterSelect = document.getElementById('filterSelect');
 
-    if (!video || !canvas || !startBtn || !processBtn) {
+    if (!video || !canvas || !startBtn || !filterSelect) {
         console.error('Required elements not found in the DOM');
         return;
     }
+
+    // Initialize WebAssembly module
+    initModule();
+
+    // Handle filter selection
+    filterSelect.addEventListener('change', (e) => {
+        currentFilter = e.target.value;
+    });
 
     // Start camera stream
     startBtn.addEventListener('click', async () => {
@@ -48,7 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
             video.srcObject = stream;
             video.onloadedmetadata = () => {
                 video.play();
-                processBtn.disabled = false;
+                filterSelect.disabled = false;
                 startBtn.disabled = true;
             };
         } catch (err) {
@@ -56,26 +67,39 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-
-    video.addEventListener("loadeddata", (e) => {
+    video.addEventListener("loadeddata", () => {
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
       
         function processFrame() {
-          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            
+            // Apply selected filter
+            let processedData;
+            switch (currentFilter) {
+                case 'grayscale':
+                    processedData = applyFilter(imageData.data, canvas.width, canvas.height, FilterType.GRAYSCALE);
+                    break;
+                case 'sepia':
+                    processedData = applyFilter(imageData.data, canvas.width, canvas.height, FilterType.SEPIA);
+                    break;
+                default:
+                    processedData = imageData.data;
+                    break;
+            }
       
-          // Send imageData to WASM for processing
-          const processedData = applyGrayscale(imageData.data, canvas.width, canvas.height);
+            // Draw the processed image back onto the canvas
+            const outputImageData = new ImageData(
+                new Uint8ClampedArray(processedData),
+                canvas.width,
+                canvas.height
+            );
+            ctx.putImageData(outputImageData, 0, 0);
       
-          // Draw the processed image back onto the canvas
-          const outputImageData = new ImageData(new Uint8ClampedArray(processedData), canvas.width, canvas.height);
-          ctx.putImageData(outputImageData, 0, 0);
-      
-          requestAnimationFrame(processFrame);
+            requestAnimationFrame(processFrame);
         }
       
         processFrame();
-      });
-
+    });
 }); 

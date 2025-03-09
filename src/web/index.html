@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Simple Grayscale Filter</title>
+    <title>Real-time Image Filters</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -9,33 +9,40 @@
             text-align: center;
         }
         #video {
-            border: 1px solid #ccc;
-            margin: 10px;
-            width: 500px;
-            height: calc(500px * 0.75);
+            display: none;
         }
         #canvas {
             border: 1px solid #ccc;
             margin: 10px;
-            width: 500px;
-            height: calc(500px * 0.75);
+            width: 640px;
+            height: 480px;
         }
-        button {
+        .controls {
+            margin: 10px;
+        }
+        button, select {
             margin: 5px;
             padding: 8px 16px;
             font-size: 14px;
         }
+        select {
+            min-width: 120px;
+        }
     </style>
 </head>
 <body>
-    <h1>Simple Grayscale Filter</h1>
-    <div style="display: flex; justify-content: center; align-items: center;">
+    <h1>Real-time Image Filters</h1>
+    <div>
         <video id="video" autoplay playsinline></video>
         <canvas id="canvas"></canvas>
     </div>
-    <div>
+    <div class="controls">
         <button id="startBtn">Start Camera</button>
-        <button id="processBtn" disabled>Convert to Grayscale</button>
+        <select id="filterSelect" disabled>
+            <option value="none">No Filter</option>
+            <option value="grayscale">Grayscale</option>
+            <option value="sepia">Sepia</option>
+        </select>
     </div>
     <script type="module" src="image_processor.js"></script>
     <script type="module" src="main.js"></script>
