@@ -1,105 +1,139 @@
-let wasmModule = null;
-let currentFilter = 'none';
+class VideoProcessor {
+    constructor() {
+        this.wasmModule = null;
+        this.imageProcessor = null;
+        this.currentFilter = 'none';
+        this.isProcessing = false;
+        this.frameId = null;
 
-const FilterType = {
-    NONE: 0,
-    GRAYSCALE: 1,
-    SEPIA: 2
-};
+        // DOM elements
+        this.video = document.getElementById('video');
+        this.canvas = document.getElementById('canvas');
+        this.ctx = this.canvas.getContext('2d', { willReadFrequently: true });
+        this.startBtn = document.getElementById('startBtn');
+        this.filterSelect = document.getElementById('filterSelect');
 
-// Initialize the WebAssembly module
-async function initModule() {
-    try {
-        const { default: createModule } = await import('./image_processor.js');
-        wasmModule = await createModule();
-        document.getElementById('startBtn').disabled = false;
-    } catch (err) {
-        console.error('Error initializing module:', err);
-    }
-}
+        // Bind methods
+        this.processFrame = this.processFrame.bind(this);
+        this.handleFilterChange = this.handleFilterChange.bind(this);
+        this.handleStartClick = this.handleStartClick.bind(this);
+        this.handleVideoLoaded = this.handleVideoLoaded.bind(this);
 
-function applyFilter(imageData, width, height, filterType) {
-    if (!wasmModule) return imageData;
-    const size = imageData.length;
-    const ptr = wasmModule._malloc(size);
-    wasmModule.HEAPU8.set(imageData, ptr);
-    wasmModule._applyFilter(ptr, width, height, filterType);
-    const result = new Uint8ClampedArray(wasmModule.HEAPU8.buffer, ptr, size);
-    const output = new Uint8ClampedArray(result);
-    wasmModule._free(ptr);
-    return output;
-}
-
-// Wait for DOM to be fully loaded
-document.addEventListener('DOMContentLoaded', () => {
-    // Get DOM elements
-    const video = document.getElementById('video');
-    const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
-    const startBtn = document.getElementById('startBtn');
-    const filterSelect = document.getElementById('filterSelect');
-
-    if (!video || !canvas || !startBtn || !filterSelect) {
-        console.error('Required elements not found in the DOM');
-        return;
+        // Initialize
+        this.initializeEventListeners();
     }
 
-    // Initialize WebAssembly module
-    initModule();
+    async initialize() {
+        try {
+            const { default: createModule } = await import('./image_processor.js');
+            this.wasmModule = await createModule();
+            this.imageProcessor = new this.wasmModule.ImageProcessor();
+            this.startBtn.disabled = false;
+        } catch (err) {
+            console.error('Error initializing module:', err);
+        }
+    }
 
-    // Handle filter selection
-    filterSelect.addEventListener('change', (e) => {
-        currentFilter = e.target.value;
-    });
+    initializeEventListeners() {
+        if (!this.video || !this.canvas || !this.startBtn || !this.filterSelect) {
+            console.error('Required elements not found in the DOM');
+            return;
+        }
 
-    // Start camera stream
-    startBtn.addEventListener('click', async () => {
+        this.filterSelect.addEventListener('change', this.handleFilterChange);
+        this.startBtn.addEventListener('click', this.handleStartClick);
+        this.video.addEventListener('loadeddata', this.handleVideoLoaded);
+    }
+
+    handleFilterChange(e) {
+        this.currentFilter = e.target.value;
+    }
+
+    async handleStartClick() {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-            video.srcObject = stream;
-            video.onloadedmetadata = () => {
-                video.play();
-                filterSelect.disabled = false;
-                startBtn.disabled = true;
+            this.video.srcObject = stream;
+            this.video.onloadedmetadata = () => {
+                this.video.play();
+                this.filterSelect.disabled = false;
+                this.startBtn.disabled = true;
             };
         } catch (err) {
             console.error('Error accessing camera:', err);
         }
-    });
+    }
 
-    video.addEventListener("loadeddata", () => {
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-      
-        function processFrame() {
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            
-            // Apply selected filter
-            let processedData;
-            switch (currentFilter) {
-                case 'grayscale':
-                    processedData = applyFilter(imageData.data, canvas.width, canvas.height, FilterType.GRAYSCALE);
-                    break;
-                case 'sepia':
-                    processedData = applyFilter(imageData.data, canvas.width, canvas.height, FilterType.SEPIA);
-                    break;
-                default:
-                    processedData = imageData.data;
-                    break;
-            }
-      
-            // Draw the processed image back onto the canvas
-            const outputImageData = new ImageData(
-                new Uint8ClampedArray(processedData),
-                canvas.width,
-                canvas.height
-            );
-            ctx.putImageData(outputImageData, 0, 0);
-      
-            requestAnimationFrame(processFrame);
+    handleVideoLoaded() {
+        this.canvas.width = this.video.videoWidth;
+        this.canvas.height = this.video.videoHeight;
+        this.startProcessing();
+    }
+
+    startProcessing() {
+        if (!this.isProcessing) {
+            this.isProcessing = true;
+            this.processFrame();
         }
-      
-        processFrame();
-    });
+    }
+
+    stopProcessing() {
+        if (this.frameId) {
+            cancelAnimationFrame(this.frameId);
+            this.frameId = null;
+        }
+        this.isProcessing = false;
+    }
+
+    processFrame() {
+        this.ctx.drawImage(this.video, 0, 0, this.canvas.width, this.canvas.height);
+        const imageData = this.ctx.getImageData(0, 0, this.canvas.width, this.canvas.height);
+        
+        let processedData;
+        if (this.imageProcessor) {
+            const filterType = this.getFilterType();
+            if (filterType !== this.wasmModule.FilterType.NONE) {
+                const ptr = this.wasmModule._malloc(imageData.data.length);
+                this.wasmModule.HEAPU8.set(imageData.data, ptr);
+                this.imageProcessor.processImage(ptr, this.canvas.width, this.canvas.height, filterType);
+                processedData = new Uint8ClampedArray(
+                    this.wasmModule.HEAPU8.buffer, 
+                    ptr, 
+                    imageData.data.length
+                );
+                const output = new Uint8ClampedArray(processedData);
+                this.wasmModule._free(ptr);
+                processedData = output;
+            } else {
+                processedData = imageData.data;
+            }
+        } else {
+            processedData = imageData.data;
+        }
+
+        const outputImageData = new ImageData(
+            new Uint8ClampedArray(processedData),
+            this.canvas.width,
+            this.canvas.height
+        );
+        this.ctx.putImageData(outputImageData, 0, 0);
+
+        this.frameId = requestAnimationFrame(this.processFrame);
+    }
+
+    getFilterType() {
+        switch (this.currentFilter) {
+            case 'grayscale':
+                return this.wasmModule.FilterType.GRAYSCALE;
+            case 'sepia':
+                return this.wasmModule.FilterType.SEPIA;
+            default:
+                return this.wasmModule.FilterType.NONE;
+        }
+    }
+}
+
+// Initialize when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    const processor = new VideoProcessor();
+    processor.initialize();
 }); 
